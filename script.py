@@ -20,8 +20,9 @@ print(df)
 X_data = df.drop('satisfied', axis=1)
 labels = df['satisfied']
 X_train, X_test, y_train, y_test = train_test_split(X_data, labels, test_size=0.2, random_state=101)
-#input_func = tf.estimator.inputs.pandas_input_fn(x=X_train, y=y_train, batch_size=10, num_epochs=1000, shuffle=True)
-input_func = tf.compat.v1.estimator.inputs.pandas_input_fn(x=X_train, y=y_train, batch_size=10, num_epochs=1000, shuffle=True)
+input_func = tf.estimator.inputs.pandas_input_fn(x=X_train, y=y_train, batch_size=10, num_epochs=1000, shuffle=True)
+#input_func = tf.compat.v1.estimator.inputs.pandas_input_fn(x=X_train, y=y_train, batch_size=10, num_epochs=1000, shuffle=True)
 model=tf.estimator.LinearClassifier(feature_columns=feat_columns, n_classes=2)
+print("################ training:")
 model.train(input_fn=input_func, steps=1000)
 
