@@ -1,58 +1,30 @@
-# for dependecies run pip3 install -r requirements.txt
 import pandas as pd
-import tensorflow as tf
-import seaborn as sns
-import numpy as np
-import matplotlib.pyplot as plt
-import random
+from tensorflow.keras.layers import Input, Dense, Activation,Dropout
+from tensorflow.keras.models import Model
 from sklearn.model_selection import train_test_split
-dataset = pd.read_csv('employee_satisfaction_index.csv')
-dataset = dataset.drop(['record_number', 'emp_id'], axis=1)
-#cols_to_norm = ['age', 'Dept', 'location', 'education', 'recruitment_type', 'job_level', 'rating', 'onsite', 'awards', 'certifications', 'salary']
-lista_kolumn_ze_stringami = ['Dept', 'location', 'education', 'recruitment_type']
 
-for x in lista_kolumn_ze_stringami:
-    dataset[x] = pd.factorize(dataset[x])[0]
+cols = ['price', 'maint', 'doors', 'persons', 'lug_capacity', 'safety','output']
+cars = pd.read_csv(r'car_evaluation.csv', names=cols, header=None)
 
-train_dataset = dataset.sample(frac=0.8, random_state=0)
-test_dataset = dataset.drop(train_dataset.index)
+price = pd.get_dummies(cars.price, prefix='price')
+maint = pd.get_dummies(cars.maint, prefix='maint')
+doors = pd.get_dummies(cars.doors, prefix='doors')
+persons = pd.get_dummies(cars.persons, prefix='persons')
+lug_capacity = pd.get_dummies(cars.lug_capacity, prefix='lug_capacity')
+safety = pd.get_dummies(cars.safety, prefix='safety')
 
-train_features = train_dataset.copy()
-test_features = test_dataset.copy()
+labels = pd.get_dummies(cars.output, prefix='condition')
+X = pd.concat([price, maint, doors, persons, lug_capacity, safety] , axis=1)
+y = labels.values
 
-train_labels = train_features['satisfied']
-#test_labels = test_features.pop('satisfied')
-#print(train_dataset.describe().transpose()[['mean', 'std']])
-normalizer = tf.keras.layers.Normalization(axis=-1)
-normalizer.adapt(np.asarray(train_features).astype('float32'))
-#print(normalizer.mean.numpy())
-first = np.array(train_features[:1])
-satisfied_normalizer = tf.keras.layers.Normalization(input_shape=[1,], axis=None)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=42)
 
-#with np.printoptions(precision=2, suppress=True):
-#    print('First example:', first)
-#    print()
-#    print('Normalized:', normalizer(first).numpy())
+input_layer = Input(shape=(X.shape[1],))
+dense_layer_1 = Dense(15, activation='relu')(input_layer)
+dense_layer_2 = Dense(10, activation='relu')(dense_layer_1)
+output = Dense(y.shape[1], activation='softmax')(dense_layer_2)
 
-def build_and_compile_model(norm):
-    model = tf.keras.Sequential([
-        norm,
-        tf.keras.layers.Dense(64, activation='relu'),
-        tf.keras.layers.Dense(64, activation='relu'),
-        tf.keras.layers.Dense(1)
-    ])
-    model.compile(loss='mean_absolute_error',
-            optimizer=tf.keras.optimizers.Adam(0.001))
-    return model
+model = Model(inputs=input_layer, outputs=output)
+model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['acc'])
 
-dnn_satisfation_model = build_and_compile_model(satisfied_normalizer)
-
-history = dnn_satisfation_model.fit(
-        train_features['satisfied'],
-        train_labels,
-        validation_split=0.2,
-        verbose=0, epochs=100)
-
-x = tf.linspace(0.0, 250, 251)
-y = dnn_satisfation_model.predict(x)
-print(y)
+history = model.fit(X_train, y_train, batch_size=8, epochs=50, verbose=1, validation_split=0.2)
