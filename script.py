@@ -1,3 +1,4 @@
+# installing dependencies: pip3 install -r requirements.txt
 import pandas as pd
 from tensorflow.keras.layers import Input, Dense, Activation,Dropout
 from tensorflow.keras.models import Model
